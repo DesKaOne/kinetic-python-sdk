@@ -1,3 +1,4 @@
+import base64
 from solana.publickey import PublicKey
 
 from solders.instruction import AccountMeta, Instruction
@@ -9,10 +10,11 @@ from spl.token.instructions import get_associated_token_address
 
 from kinetic_sdk.helpers.sign_and_serialize_transaction import sign_and_serialize_transaction
 from kinetic_sdk.helpers.generate_create_account_transaction import create_associated_token_account_instruction
+from kinetic_sdk.models.kin_memo import KinMemo
 from kinetic_sdk.models.public_key_string import PublicKeyString
 from kinetic_sdk.models.transaction_type import TransactionType
 
-from kinetic_sdk.models.constants import TOKEN_PROGRAM_ID
+from kinetic_sdk.models.constants import PROGRAM_KEY, TOKEN_PROGRAM_ID
 
 
 def create_make_transfer_instruction(
@@ -20,7 +22,7 @@ def create_make_transfer_instruction(
     source_token_account: Pubkey,
     destination_token_account: Pubkey,
     mint: Pubkey,
-    amount: int,
+    amount: float,
     decimals: int,
 ):
     account_metas = [
@@ -30,7 +32,7 @@ def create_make_transfer_instruction(
         AccountMeta(source, True, False),
     ]
 
-    amount = amount * 10 ** decimals
+    amount = int(amount * 10 ** decimals)
     data = INSTRUCTIONS_LAYOUT.build(
         dict(instruction_type=InstructionType.TRANSFER2, args=dict(amount=amount, decimals=decimals))
     )
@@ -41,6 +43,12 @@ def create_make_transfer_instruction(
         accounts=account_metas
     )
 
+def create_memo_program(app_index: int, tx_type: TransactionType):
+    return Instruction(
+        program_id=PROGRAM_KEY,
+        data=bytes(base64.b64encode(KinMemo.new(1, tx_type, app_index, b'').val).decode('utf-8'), 'utf-8'),
+        accounts=[]
+    )
 
 def generate_make_transfer_transaction(
     add_memo: bool,
@@ -58,7 +66,9 @@ def generate_make_transfer_transaction(
     source_token_account = get_associated_token_address(source.public_key, PublicKey(mint_public_key))
     destination_token_account = get_associated_token_address(PublicKey(destination), PublicKey(mint_public_key))
 
-    instructions = []
+    instructions = list()
+
+    instructions.append(create_memo_program(app_index, tx_type))
 
     if (sender_create == True):
         create_instruction = create_associated_token_account_instruction(
@@ -74,7 +84,7 @@ def generate_make_transfer_transaction(
         source_token_account=source_token_account.to_solders(),
         destination_token_account=destination_token_account.to_solders(),
         mint=PublicKey(mint_public_key).to_solders(),
-        amount=int(amount),
+        amount=float(amount),
         decimals=decimals
     )
 

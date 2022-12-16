@@ -4,6 +4,7 @@ from kinetic_sdk.kinetic_sdk_internal import KineticSdkInternal
 from kinetic_sdk.models.transaction_type import TransactionType
 from kinetic_sdk.models.public_key_string import PublicKeyString
 from kinetic_sdk.models.keypair import Keypair
+from kinetic_sdk.models.batch import Batch
 
 from kinetic_sdk.generated.client.model.commitment import Commitment
 
@@ -16,6 +17,9 @@ class KineticSdk(object):
 
     def create_account(self, owner: Keypair, mint: PublicKeyString = None, commitment=Commitment("Confirmed"), reference_id: str = None, reference_type: str = None):
         return self.internal.create_account(owner, mint, commitment, reference_id, reference_type)
+    
+    def get_account_info(self, account: PublicKeyString):
+        return self.internal.get_account_info(account)
 
     def get_balance(self, account: PublicKeyString):
         return self.internal.get_balance(account)
@@ -49,7 +53,7 @@ class KineticSdk(object):
     def make_transfer_batch(
         self,
         owner: Keypair,
-        destinations: List[Dict[PublicKeyString, str]],
+        destinations: List[Batch],
         tx_type: TransactionType = TransactionType.NONE,
         mint: PublicKeyString = None,
         commitment=Commitment("Confirmed"),

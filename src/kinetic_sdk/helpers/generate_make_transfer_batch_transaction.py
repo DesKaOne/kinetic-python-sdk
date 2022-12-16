@@ -1,3 +1,4 @@
+import base64
 from typing import List, Dict
 from solana.publickey import PublicKey
 
@@ -9,10 +10,11 @@ from spl.token._layouts import INSTRUCTIONS_LAYOUT, InstructionType
 from spl.token.instructions import get_associated_token_address
 
 from kinetic_sdk.helpers.sign_and_serialize_transaction import sign_and_serialize_transaction
+from kinetic_sdk.models.kin_memo import KinMemo
 from kinetic_sdk.models.public_key_string import PublicKeyString
 from kinetic_sdk.models.transaction_type import TransactionType
-
-from kinetic_sdk.models.constants import TOKEN_PROGRAM_ID
+from kinetic_sdk.models.batch import Batch
+from kinetic_sdk.models.constants import TOKEN_PROGRAM_ID, PROGRAM_KEY
 
 
 def create_make_transfer_instruction(
@@ -20,7 +22,7 @@ def create_make_transfer_instruction(
     source_token_account: Pubkey,
     destination_token_account: Pubkey,
     mint: Pubkey,
-    amount: int,
+    amount: float,
     decimals: int,
 ):
     account_metas = [
@@ -30,7 +32,7 @@ def create_make_transfer_instruction(
         AccountMeta(source, True, False),
     ]
 
-    amount = amount * 10 ** decimals
+    amount = int(amount * 10 ** decimals)
     data = INSTRUCTIONS_LAYOUT.build(
         dict(instruction_type=InstructionType.TRANSFER2, args=dict(amount=amount, decimals=decimals))
     )
@@ -41,11 +43,17 @@ def create_make_transfer_instruction(
         accounts=account_metas
     )
 
+def create_memo_program(app_index: int, tx_type: TransactionType):
+    return Instruction(
+        program_id=PROGRAM_KEY,
+        data=bytes(base64.b64encode(KinMemo.new(1, tx_type, app_index, b'').val).decode('utf-8'), 'utf-8'),
+        accounts=[]
+    )
 
 def generate_make_transfer_batch_transaction(
     add_memo: bool,
     app_index: int,
-    destinations: List[Dict[PublicKeyString, str]],
+    destinations: List[Batch],
     decimals: int,
     mint_fee_payer: str,
     mint_public_key: str,
@@ -54,17 +62,19 @@ def generate_make_transfer_batch_transaction(
     tx_type: TransactionType = TransactionType.NONE
 ):
     instructions: List[Instruction] = []
+    
+    instructions.append(create_memo_program(app_index, tx_type))
 
     for destination in destinations:
         source_token_account = get_associated_token_address(source.public_key, PublicKey(mint_public_key))
-        destination_token_account = get_associated_token_address(PublicKey(destination['destination']), PublicKey(mint_public_key))
+        destination_token_account = get_associated_token_address(PublicKey(destination.__dict__['destination']), PublicKey(mint_public_key))
 
         instruction = create_make_transfer_instruction(
             source=source.public_key.to_solders(),
             source_token_account=source_token_account.to_solders(),
             destination_token_account=destination_token_account.to_solders(),
             mint=PublicKey(mint_public_key).to_solders(),
-            amount=int(destination['amount']),
+            amount=float(destination.__dict__['amount']),
             decimals=decimals
         )
 
