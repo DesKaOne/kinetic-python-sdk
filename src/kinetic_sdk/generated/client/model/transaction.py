@@ -90,8 +90,8 @@ class Transaction(ModelNormal):
         lazy_import()
         return {
             'id': (str, none_type,),  # noqa: E501
-            'created_at': (datetime, none_type,),  # noqa: E501
-            'updated_at': (datetime, none_type,),  # noqa: E501
+            'created_at': (str, none_type,),  # noqa: E501
+            'updated_at': (str, none_type,),  # noqa: E501
             'amount': (str, none_type,),  # noqa: E501
             'decimals': (int, none_type,),  # noqa: E501
             'destination': (str, none_type,),  # noqa: E501
@@ -104,22 +104,22 @@ class Transaction(ModelNormal):
             'reference_id': (str, none_type,),  # noqa: E501
             'reference_type': (str, none_type,),  # noqa: E501
             'signature': (str, none_type,),  # noqa: E501
-            'solana_committed': (datetime, none_type,),  # noqa: E501
+            'solana_committed': (str, none_type,),  # noqa: E501
             'solana_committed_duration': (int, none_type,),  # noqa: E501
-            'solana_finalized': (datetime, none_type,),  # noqa: E501
+            'solana_finalized': (str, none_type,),  # noqa: E501
             'solana_finalized_duration': (int, none_type,),  # noqa: E501
-            'solana_start': (datetime, none_type,),  # noqa: E501
-            'solana_transaction': ({str: (bool, date, datetime, dict, float, int, list, str, none_type)}, none_type,),  # noqa: E501
+            'solana_start': (str, none_type,),  # noqa: E501
+            'solana_transaction': ({str: (bool, date, str, dict, float, int, list, str, none_type)}, none_type,),  # noqa: E501
             'source': (str, none_type,),  # noqa: E501
             'status': (TransactionStatus,),  # noqa: E501
             'total_duration': (int, none_type,),  # noqa: E501
             'tx': (str, none_type,),  # noqa: E501
             'ua': (str, none_type,),  # noqa: E501
-            'webhook_event_start': (datetime, none_type,),  # noqa: E501
-            'webhook_event_end': (datetime, none_type,),  # noqa: E501
+            'webhook_event_start': (str, none_type,),  # noqa: E501
+            'webhook_event_end': (str, none_type,),  # noqa: E501
             'webhook_event_duration': (int, none_type,),  # noqa: E501
-            'webhook_verify_start': (datetime, none_type,),  # noqa: E501
-            'webhook_verify_end': (datetime, none_type,),  # noqa: E501
+            'webhook_verify_start': (str, none_type,),  # noqa: E501
+            'webhook_verify_end': (str, none_type,),  # noqa: E501
             'webhook_verify_duration': (int, none_type,),  # noqa: E501
         }
 
@@ -266,7 +266,7 @@ class Transaction(ModelNormal):
         self._path_to_item = _path_to_item
         self._configuration = _configuration
         self._visited_composed_classes = _visited_composed_classes + (self.__class__,)
-
+        
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \
@@ -274,8 +274,11 @@ class Transaction(ModelNormal):
                         self.additional_properties_type is None:
                 # discard variable.
                 continue
+            if var_name == 'amount':
+                var_value = float(var_value)
             setattr(self, var_name, var_value)
-        return self
+        
+        return self.to_dict()
 
     required_properties = set([
         '_data_store',
@@ -388,7 +391,7 @@ class Transaction(ModelNormal):
                         self._configuration.discard_unknown_keys and \
                         self.additional_properties_type is None:
                 # discard variable.
-                continue
+                continue            
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
                 raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
