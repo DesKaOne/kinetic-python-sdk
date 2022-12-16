@@ -180,7 +180,7 @@ class BalanceResponse(ModelNormal):
         self._configuration = _configuration
         self._visited_composed_classes = _visited_composed_classes + (self.__class__,)
 
-        self.balance = balance
+        self.balance = float(balance)
         self.mints = mints
         self.tokens = tokens
         for var_name, var_value in kwargs.items():
@@ -189,9 +189,9 @@ class BalanceResponse(ModelNormal):
                         self._configuration.discard_unknown_keys and \
                         self.additional_properties_type is None:
                 # discard variable.
-                continue
+                continue            
             setattr(self, var_name, var_value)
-        return self
+        return self.to_dict()
 
     required_properties = set([
         '_data_store',

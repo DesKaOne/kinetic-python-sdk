@@ -177,7 +177,7 @@ class RequestAirdropResponse(ModelNormal):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
-        return self
+        return self.to_dict()
 
     required_properties = set([
         '_data_store',
